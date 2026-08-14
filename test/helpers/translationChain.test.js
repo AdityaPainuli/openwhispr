@@ -94,6 +94,19 @@ test("cleanup returns empty: text unchanged, translate still runs", async () => 
   assert.equal(result.text, "translated(raw)");
 });
 
+test("cleanup returns whitespace-only: text unchanged, translate still runs", async () => {
+  const { executeTranslationChain } = await load();
+
+  const result = await executeTranslationChain(
+    makeOpts({
+      runCleanup: async () => "   \n  ",
+      runTranslate: async (currentText) => `translated(${currentText})`,
+    })
+  );
+
+  assert.equal(result.text, "translated(raw)");
+});
+
 test("translate returns empty: onEmptyTranslate fires, cleaned text kept", async () => {
   const { executeTranslationChain } = await load();
   let emptyCalled = false;
@@ -305,6 +318,12 @@ test("resolveTranslatedText: empty chain result keeps processedText", async () =
   assert.equal(resolveTranslatedText("raw dictation", {}), "raw dictation");
 });
 
+test("resolveTranslatedText: whitespace-only chain result keeps processedText", async () => {
+  const { resolveTranslatedText } = await load();
+
+  assert.equal(resolveTranslatedText("raw dictation", { text: "   \n  " }), "raw dictation");
+});
+
 test("resolveTranslatedText: non-empty chain result replaces processedText", async () => {
   const { resolveTranslatedText } = await load();
 
@@ -363,4 +382,17 @@ test("translated: false when the translate step is skipped", async () => {
   );
   assert.equal(result.translated, false);
   assert.equal(result.text, "raw");
+});
+
+// Guard shared with the agent/cleanup call sites (audioManager, ControlPanel history
+// retry): whitespace-only reasoning output must never replace existing text (#1616).
+test("hasTextContent: true only for strings with non-whitespace content", async () => {
+  const { hasTextContent } = await load();
+
+  assert.equal(hasTextContent("cleaned text"), true);
+  assert.equal(hasTextContent("  padded  "), true);
+  assert.equal(hasTextContent(""), false);
+  assert.equal(hasTextContent("   \n\t  "), false);
+  assert.equal(hasTextContent(null), false);
+  assert.equal(hasTextContent(undefined), false);
 });
