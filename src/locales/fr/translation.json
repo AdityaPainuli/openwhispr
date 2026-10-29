@@ -3805,6 +3805,7 @@
     },
     "speaker": {
       "you": "Vous",
+      "noteTaker": "Preneur de notes",
       "them": "Eux",
       "unknown": "Intervenant inconnu",
       "label": "Intervenant {{n}}",
